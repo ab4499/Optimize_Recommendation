@@ -12,6 +12,6 @@ Interest - Students' perception (rating) of their interest of each unit
 
 ### Load data
 
-### Convert dataframe to matrices
+#### Convert dataframe to matrices
 
-### Generate a user-based similarity matrix based on cosine similarity using the ratings
+#### Generate a user-based similarity matrix based on cosine similarity using the ratings
