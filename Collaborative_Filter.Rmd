@@ -1,0 +1,111 @@
+---
+title: "collaborative-filter"
+author: "Charles Lang"
+date: "1/31/2019"
+output: html_document
+---
+
+In HUDK4051 there are six units, we will use your ratings of these units in terms of both interest and difficulty to produce individual suggestions about what unit to attempt next.
+
+Start by uploading both the interest and difficulty csv files:
+```{r}
+DD<-read.csv("difficulty.csv", header=TRUE)
+DI<-read.csv("interest.csv", header=TRUE)
+```
+
+We will be using matrix operations in this assignment, so convert your data frames to matrices:
+```{r, echo = FALSE}
+#HINT: First you will need to remove the student ids as matrices can only contain one data type. You will then need to rename your row names with the student ids.
+library(dplyr)
+DI1<-DI[!duplicated(DI$name), ]
+rownames(DI1)<-DI1$name
+# or DI1<-unique(DI[,1])
+DI1<-select(DI1, -1)
+DI1<-as.matrix(DI1)
+
+DD1<-DD[!duplicated(DD$name), ]
+rownames(DD1)<-DD1$name
+DD1<-select(DD1, -1)
+DD1<-as.matrix(DD1)
+```
+
+First, lets look at the interest data. We can generate a user-based similarity matrix based on cosine similarity using the ratings the class gave each unit. This matrix will represent the similarity of interests between students in the class.
+```{r, echo = FALSE}
+#First let's transpose the matrix so that multiplication occurs by students rather than units.
+
+#Look at your data, missing values are coded with zero not NA. Investigate cosine similarity and decide whether your missing values should be coded with zeros or NAs. Explain your choice.
+
+DI1 <- t(DI1)
+DI1[is.na(DI1)]=0
+
+DD1<-t(DD1)
+DD1[is.na(DD1)]=0
+
+#Then we can generate the cosine similarity values for each pair of students
+#install.packages("lsa") #You will need to install the lsa package to access the cosine command.
+
+library(lsa)
+
+I.SIM <- cosine(DI1) #This command generates the cosine similarity values as a new matrix. Click on I.SIM in the Global Environment pane to see what it looks like.
+D.SIM<-cosine(DD1)
+
+diag(I.SIM)<-NA #Since each student will be most similar to themselves we want to remove that information
+diag(D.SIM)<-NA
+```
+
+Now, we can make a quick query to find out which students are most similar to you. 
+```{r}
+my.name <- "Aidi Bian" #Input your name as it appears in the data set
+
+head(rownames(I.SIM[order(I.SIM[my.name,], decreasing = TRUE),]), n = 2) #This code orders the column of the matrix corresponding to your UNI according to similarity and returns the top two UNI ids for the students who's interests are most similar to yours
+head(rownames(D.SIM[order(D.SIM[my.name,], decreasing=TRUE),]), n=2)
+```
+
+This is a basic collaborative filter! You have used information about interest across the class to generate an individual suggestion. Email one of your top matches, you may find them to be a good person to work with or ask questions during the semester.
+
+Now create a unit-based, rather than student-based similarity matrix for difficulty. Then use your similarity matrix to provide a suggested next unit to a student who is looking for the unit that is most similar in terms of difficulty to the "prediction" unit. 
+```{r}
+DD2<-t(DD1)
+D.SIM2<-cosine(DD2)
+diag(D.SIM2)<-NA
+head(rownames(D.SIM2[order(D.SIM2["pred.dif",], decreasing=TRUE),]),2)
+```
+
+Finally, educational settings have important differences to purely commercial settings such as film or product suggestions. In education we want people not to just follow their interests as they may simply choose things that are easy for them so they learn very little. To reduce this possibility with your collaborative filter create a composite measure from interest and difficulty, then construct a similarity matrix using this measure. (HINT: PCA). Once you have built the similarity matrix generate a suggestion for a student who has just completed the "prediction" unit.
+
+```{r}
+library(tidyr)
+# gather and join the data so that we have the difficulty and interet score in one data frame
+DI3<-gather(DI, unit, interest, -name)
+DD3<-gather(DD, unit, difficulty, -name)
+
+D1<-data.frame(DI3$name, DI3$unit, DI3$interest, DD3$difficulty)
+colnames(D1)<-c("name", "unit", "interest", "difficulty")
+D1<-filter(D1, !is.na(interest), !is.na(difficulty))
+#Remove int from unit label
+D1$unit<-gsub(".int", "", D1$unit)
+D2<-select(D1, interest, difficulty)
+
+# RUN PCA
+pc<-prcomp(D2)
+#Extract PC1 loadings as new measure and attach to student name & unit
+D3<-data.frame(D1$name, D1$unit, pc$x[, 1])
+colnames(D3)<-c("name", "unit", "PC1")
+
+#Recreate unit by student matrix
+D4<-spread(D3, unit, PC1)
+rownames(D4)<-D4$name
+D4$name<-NULL
+D4<-as.matrix(D4)
+D4<-ifelse(is.na(D4), 0, D4)
+
+#Generate cosine similarity matrix for units
+C.SIM<-cosine(D4)
+diag(C.SIM)<-NA
+#Search for most similar unit to "prediction" unit
+head(rownames(C.SIM[order(C.SIM["pred", ], decreasing=TRUE), ]), n=1)
+
+```
+The unit most similar to "prediction" is "Social Network Analysis" (in terms of composite measure of interest and difficulty).
+
+Once you have completed your collaborative filter you can return to it each time you are choosing a new unit to complete.
