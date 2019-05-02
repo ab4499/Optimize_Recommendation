@@ -10,7 +10,7 @@ We have two datasets:
 Difficulty - Students' perception (rating) on the difficulty of each unit
 Interest - Students' perception (rating) of their interest of each unit
 
-### Load data
+#### Load data
 
 #### Convert dataframe to matrices
 
