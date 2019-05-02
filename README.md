@@ -5,3 +5,13 @@ This project build recommendation system to recommend the sequence of learning c
 1) The recommendation system will suggest which unit a student should learn next. 
 2) The recommendation system will suggest two classmates that a student can partner with in the class.
 
+## Process
+We have two datasets:
+Difficulty - Students' perception (rating) on the difficulty of each unit
+Interest - Students' perception (rating) of their interest of each unit
+
+### Load data
+
+### Convert dataframe to matrices
+
+### Generate a user-based similarity matrix based on cosine similarity using the ratings
