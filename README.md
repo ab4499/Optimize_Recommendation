@@ -14,7 +14,8 @@ Difficulty - Students' perception (rating) on the difficulty of each unit
 Interest - Students' perception (rating) of their interest of each unit
 
 #### Load data
-
+    DD<-read.csv("difficulty.csv", header=TRUE)
+    DI<-read.csv("interest.csv", header=TRUE)
 #### Convert dataframe to matrices
 
 #### Generate a user-based similarity matrix based on cosine similarity using the ratings！
